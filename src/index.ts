@@ -1,5 +1,5 @@
 import type { BackupData, BackupInfos, CreateOptions, LoadOptions } from './types/';
-import type { Guild } from 'discord.js';
+import { Guild, MessageEmbed } from 'discord.js';
 import { SnowflakeUtil, Intents } from 'discord.js';
 
 import nodeFetch from 'node-fetch';
@@ -26,10 +26,21 @@ const getBackupData = async (backupID: string) => {
         // Try to get the json file
         const file = files.filter((f) => f.split('.').pop() === 'json').find((f) => f === `${backupID}.json`);
         if (file) {
-            // If the file exists
-            const backupData: BackupData = require(`${backups}${sep}${file}`);
+            var zlib = require('zlib');
+            var fs = require('fs');
+            var unzip = zlib.createUnzip();
+            var read = fs.createReadStream("" + backups + sep + file);
+            var write = fs.createWriteStream("" + backups + sep + 'decompressed-' + file);
+            //Transform stream which is unzipping the zipped file
+            //backupData = require("" + backups + path_1.sep + file);
             // Returns backup informations
-            resolve(backupData);
+            read.pipe(unzip).pipe(write)
+            console.log("Decompressed");
+            setTimeout(function () {
+                let data = require("" + backups + sep + 'decompressed-' + file)
+                fs.unlinkSync("" + backups + sep + 'decompressed-' + file);
+                resolve(data);
+            }, 3000);
         } else {
             // If no backup was found, return an error message
             reject('No backup found');
@@ -75,8 +86,8 @@ export const create = async (
 ) => {
     return new Promise<BackupData>(async (resolve, reject) => {
 
-       const intents = new Intents(guild.client.options.intents);
-       if (!intents.has('GUILDS')) return reject('GUILDS intent is required');
+        const intents = new Intents(guild.client.options.intents);
+        if (!intents.has('GUILDS')) return reject('GUILDS intent is required');
 
         try {
             const backupData: BackupData = {
@@ -143,7 +154,20 @@ export const create = async (
                     ? JSON.stringify(backupData, null, 4)
                     : JSON.stringify(backupData);
                 // Save the backup
-                await writeFile(`${backups}${sep}${backupData.id}.json`, backupJSON, 'utf-8');
+                await writeFile(`${backups}${sep}${backupData.id}uncompressed.json`, backupJSON, 'utf-8');
+                const zlib = require('zlib');
+                const gzip = zlib.createGzip();
+                const fs = require('fs');
+                let inp
+                let out
+                setTimeout(function () {
+                    inp = fs.createReadStream(`${backups}${sep}${backupData.id}uncompressed.json`);
+                }, 3000)
+                setTimeout(function () {
+                    out = fs.createWriteStream(`${backups}${sep}${backupData.id}.json`);
+                    inp.pipe(gzip).pipe(out);
+                    fs.unlinkSync(`${backups}${sep}${backupData.id}uncompressed.json`);
+                }, 3000)
             }
             // Returns ID
             resolve(backupData);
@@ -165,6 +189,13 @@ export const load = async (
     }
 ) => {
     return new Promise(async (resolve, reject) => {
+        let msg
+        let channel2
+        let embed = new MessageEmbed()
+            .setTitle("Estado backup")
+            .setColor(0x15ff00)
+            .setFooter("Node Bot | Backups")
+            .setDescription("Estamos realizando la backup, espera....")
         if (!guild) {
             return reject('Invalid guild');
         }
@@ -175,22 +206,41 @@ export const load = async (
                     // Clear the guild
                     await utilMaster.clearGuild(guild);
                 }
-                await Promise.all([
                     // Restore guild configuration
-                    loadMaster.loadConfig(guild, backupData),
-                    // Restore guild roles
-                    loadMaster.loadRoles(guild, backupData),
-                    // Restore guild channels
-                    loadMaster.loadChannels(guild, backupData, options),
-                    // Restore afk channel and timeout
-                    loadMaster.loadAFK(guild, backupData),
-                    // Restore guild emojis
-                    loadMaster.loadEmojis(guild, backupData),
-                    // Restore guild bans
-                    loadMaster.loadBans(guild, backupData),
-                    // Restore embed channel
-                    loadMaster.loadEmbedChannel(guild, backupData)
-                ]);
+                    guild.channels.create("Backup Status").then((channel) => {
+                        channel2 = channel
+                        msg = channel.send({embeds: [embed]})
+                    })
+                    loadMaster.loadConfig(guild, backupData).then(() => {
+                        embed.setDescription("Estamos poniendo la configuración de tu servidor")
+                        msg.edit({ embeds: [embed]})
+                        loadMaster.loadRoles(guild, backupData).then(() => {
+                            embed.setDescription("Estamos configurando los roles de tu servidor")
+                        msg.edit({ embeds: [embed]})
+                            loadMaster.loadChannels(guild, backupData, options).then(() => {
+                                embed.setDescription("Estamos configurando los roles de tu servidor")
+                                msg.edit({ embeds: [embed] })
+                                loadMaster.loadAFK(guild, backupData).then(() => {
+                                    loadMaster.loadEmojis(guild, backupData).then(() => {
+                                        embed.setDescription("Estamos añadiendo los emojis")
+                                        msg.edit({ embeds: [embed] })
+                                        loadMaster.loadBans(guild, backupData).then(() => {
+                                            embed.setDescription("Estamos cargando todos los baneos")
+                                            msg.edit({ embeds: [embed] })
+                                            loadMaster.loadEmbedChannel(guild, backupData).then(() => {
+                                                embed.setDescription("Tu servidor estña listo! Borrando este canal en 5 segundos...")
+                                                msg.edit({ embeds: [embed] })
+                                                setTimeout(() => {
+                                                    channel2.delete()
+                                                }, 5000);
+                                            })
+                                        })
+                                    })
+                                })
+                            })
+                        })
+                    })
+                
             } catch (e) {
                 return reject(e);
             }

@@ -307,17 +307,17 @@ export async function clearGuild(guild: Guild) {
     guild.roles.cache
         .filter((role) => !role.managed && role.editable && role.id !== guild.id)
         .forEach((role) => {
-            role.delete().catch(() => {});
+            role.delete().catch((e) => {});
         });
     guild.channels.cache.forEach((channel) => {
-        channel.delete().catch(() => {});
+        channel.delete()
     });
     guild.emojis.cache.forEach((emoji) => {
-        emoji.delete().catch(() => {});
+        emoji.delete().catch((e) => {});
     });
     const webhooks = await guild.fetchWebhooks();
     webhooks.forEach((webhook) => {
-        webhook.delete().catch(() => {});
+        webhook.delete().catch((e) => {});
     });
     const bans = await guild.bans.fetch();
     bans.forEach((ban) => {

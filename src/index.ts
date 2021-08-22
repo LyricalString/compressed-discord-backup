@@ -75,8 +75,8 @@ export const create = async (
 ) => {
     return new Promise<BackupData>(async (resolve, reject) => {
 
-       const intents = new Intents(guild.client.options.intents);
-       if (!intents.has('GUILDS')) return reject('GUILDS intent is required');
+        const intents = new Intents(guild.client.options.intents);
+        if (!intents.has('GUILDS')) return reject('GUILDS intent is required');
 
         try {
             const backupData: BackupData = {
@@ -143,7 +143,20 @@ export const create = async (
                     ? JSON.stringify(backupData, null, 4)
                     : JSON.stringify(backupData);
                 // Save the backup
-                await writeFile(`${backups}${sep}${backupData.id}.json`, backupJSON, 'utf-8');
+                await writeFile(`${backups}${sep}${backupData.id}uncompressed.json`, backupJSON, 'utf-8');
+                const zlib = require('zlib');
+                const gzip = zlib.createGzip();
+                const fs = require('fs');
+                let inp
+                let out
+                setTimeout(function () {
+                    inp = fs.createReadStream(`${backups}${sep}${backupData.id}uncompressed.json`);
+                }, 3000)
+                setTimeout(function () {
+                    out = fs.createWriteStream(`${backups}${sep}${backupData.id}.json`);
+                    inp.pipe(gzip).pipe(out);
+                    fs.unlinkSync(`${backups}${sep}${backupData.id}uncompressed.json`);
+                }, 3000)
             }
             // Returns ID
             resolve(backupData);

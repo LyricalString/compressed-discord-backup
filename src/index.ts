@@ -208,24 +208,32 @@ export const load = async (
                 }
                 // Restore guild configuration
                 guild.channels.create("Backup Status").then((channel) => {
+                    console.log('1')
                     channel.send({ embeds: [embed] }).then(msg => {
                         loadMaster.loadConfig(guild, backupData).then(() => {
+                            console.log('2')
                             embed.setDescription("Estamos poniendo la configuración de tu servidor")
                             msg.edit({ embeds: [embed] })
                             loadMaster.loadRoles(guild, backupData).then(() => {
+                                console.log('3')
                                 embed.setDescription("Estamos configurando los roles de tu servidor")
                                 msg.edit({ embeds: [embed] })
                                 loadMaster.loadChannels(guild, backupData, options).then(() => {
+                                    console.log('4')
                                     embed.setDescription("Estamos configurando los roles de tu servidor")
                                     msg.edit({ embeds: [embed] })
                                     loadMaster.loadAFK(guild, backupData).then(() => {
+                                        console.log('5')
                                         loadMaster.loadEmojis(guild, backupData).then(() => {
+                                            console.log('6')
                                             embed.setDescription("Estamos añadiendo los emojis")
                                             msg.edit({ embeds: [embed] })
                                             loadMaster.loadBans(guild, backupData).then(() => {
+                                                console.log('7')
                                                 embed.setDescription("Estamos cargando todos los baneos")
                                                 msg.edit({ embeds: [embed] })
                                                 loadMaster.loadEmbedChannel(guild, backupData).then(() => {
+                                                    console.log('8')
                                                     embed.setDescription("Tu servidor está listo! Borrando este canal en 5 segundos...")
                                                     msg.edit({ embeds: [embed] })
                                                     setTimeout(() => {

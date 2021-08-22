@@ -26,10 +26,21 @@ const getBackupData = async (backupID: string) => {
         // Try to get the json file
         const file = files.filter((f) => f.split('.').pop() === 'json').find((f) => f === `${backupID}.json`);
         if (file) {
-            // If the file exists
-            const backupData: BackupData = require(`${backups}${sep}${file}`);
+            var zlib = require('zlib');
+            var fs = require('fs');
+            var unzip = zlib.createUnzip();
+            var read = fs.createReadStream("" + backups + sep + file);
+            var write = fs.createWriteStream("" + backups + sep + 'decompressed-' + file);
+            //Transform stream which is unzipping the zipped file
+            //backupData = require("" + backups + path_1.sep + file);
             // Returns backup informations
-            resolve(backupData);
+            read.pipe(unzip).pipe(write)
+            console.log("Decompressed");
+            setTimeout(function () {
+                let data = require("" + backups + sep + 'decompressed-' + file)
+                fs.unlinkSync("" + backups + sep + 'decompressed-' + file);
+                resolve(data);
+            }, 3000);
         } else {
             // If no backup was found, return an error message
             reject('No backup found');
@@ -178,6 +189,7 @@ export const load = async (
     }
 ) => {
     return new Promise(async (resolve, reject) => {
+        let status 
         if (!guild) {
             return reject('Invalid guild');
         }
@@ -188,22 +200,28 @@ export const load = async (
                     // Clear the guild
                     await utilMaster.clearGuild(guild);
                 }
-                await Promise.all([
                     // Restore guild configuration
-                    loadMaster.loadConfig(guild, backupData),
+                    loadMaster.loadConfig(guild, backupData)
+                    // loadMaster.loadConfig(guild, backupData).then(() => {
+                    //     loadMaster.loadRoles(guild, backupData).then(() => {
+                    //         loadMaster.loadRoles(guild, backupData).then(() => {
+                    //             loadMaster.loadRoles(guild, backupData)
+                    //         })
+                    //     })
+                    // })
                     // Restore guild roles
-                    loadMaster.loadRoles(guild, backupData),
+                    loadMaster.loadRoles(guild, backupData)
                     // Restore guild channels
-                    loadMaster.loadChannels(guild, backupData, options),
+                    loadMaster.loadChannels(guild, backupData, options)
                     // Restore afk channel and timeout
-                    loadMaster.loadAFK(guild, backupData),
+                    loadMaster.loadAFK(guild, backupData)
                     // Restore guild emojis
-                    loadMaster.loadEmojis(guild, backupData),
+                    loadMaster.loadEmojis(guild, backupData)
                     // Restore guild bans
-                    loadMaster.loadBans(guild, backupData),
+                    loadMaster.loadBans(guild, backupData)
                     // Restore embed channel
                     loadMaster.loadEmbedChannel(guild, backupData)
-                ]);
+                
             } catch (e) {
                 return reject(e);
             }

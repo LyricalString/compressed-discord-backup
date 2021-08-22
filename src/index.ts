@@ -206,33 +206,32 @@ export const load = async (
                     // Clear the guild
                     await utilMaster.clearGuild(guild);
                 }
-                    // Restore guild configuration
-                    guild.channels.create("Backup Status").then((channel) => {
-                        channel2 = channel
-                        msg = channel.send({embeds: [embed]})
-                    })
-                    loadMaster.loadConfig(guild, backupData).then(() => {
-                        embed.setDescription("Estamos poniendo la configuración de tu servidor")
-                        msg.edit({ embeds: [embed]})
-                        loadMaster.loadRoles(guild, backupData).then(() => {
-                            embed.setDescription("Estamos configurando los roles de tu servidor")
-                        msg.edit({ embeds: [embed]})
-                            loadMaster.loadChannels(guild, backupData, options).then(() => {
+                // Restore guild configuration
+                guild.channels.create("Backup Status").then((channel) => {
+                    channel.send({ embeds: [embed] }).then(msg => {
+                        loadMaster.loadConfig(guild, backupData).then(() => {
+                            embed.setDescription("Estamos poniendo la configuración de tu servidor")
+                            msg.edit({ embeds: [embed] })
+                            loadMaster.loadRoles(guild, backupData).then(() => {
                                 embed.setDescription("Estamos configurando los roles de tu servidor")
                                 msg.edit({ embeds: [embed] })
-                                loadMaster.loadAFK(guild, backupData).then(() => {
-                                    loadMaster.loadEmojis(guild, backupData).then(() => {
-                                        embed.setDescription("Estamos añadiendo los emojis")
-                                        msg.edit({ embeds: [embed] })
-                                        loadMaster.loadBans(guild, backupData).then(() => {
-                                            embed.setDescription("Estamos cargando todos los baneos")
+                                loadMaster.loadChannels(guild, backupData, options).then(() => {
+                                    embed.setDescription("Estamos configurando los roles de tu servidor")
+                                    msg.edit({ embeds: [embed] })
+                                    loadMaster.loadAFK(guild, backupData).then(() => {
+                                        loadMaster.loadEmojis(guild, backupData).then(() => {
+                                            embed.setDescription("Estamos añadiendo los emojis")
                                             msg.edit({ embeds: [embed] })
-                                            loadMaster.loadEmbedChannel(guild, backupData).then(() => {
-                                                embed.setDescription("Tu servidor estña listo! Borrando este canal en 5 segundos...")
+                                            loadMaster.loadBans(guild, backupData).then(() => {
+                                                embed.setDescription("Estamos cargando todos los baneos")
                                                 msg.edit({ embeds: [embed] })
-                                                setTimeout(() => {
-                                                    channel2.delete()
-                                                }, 5000);
+                                                loadMaster.loadEmbedChannel(guild, backupData).then(() => {
+                                                    embed.setDescription("Tu servidor está listo! Borrando este canal en 5 segundos...")
+                                                    msg.edit({ embeds: [embed] })
+                                                    setTimeout(() => {
+                                                        channel.delete()
+                                                    }, 5000);
+                                                })
                                             })
                                         })
                                     })
@@ -240,7 +239,8 @@ export const load = async (
                             })
                         })
                     })
-                
+                })
+
             } catch (e) {
                 return reject(e);
             }

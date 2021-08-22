@@ -201,26 +201,21 @@ export const load = async (
                     await utilMaster.clearGuild(guild);
                 }
                     // Restore guild configuration
-                    loadMaster.loadConfig(guild, backupData)
-                    // loadMaster.loadConfig(guild, backupData).then(() => {
-                    //     loadMaster.loadRoles(guild, backupData).then(() => {
-                    //         loadMaster.loadRoles(guild, backupData).then(() => {
-                    //             loadMaster.loadRoles(guild, backupData)
-                    //         })
-                    //     })
-                    // })
-                    // Restore guild roles
-                    loadMaster.loadRoles(guild, backupData)
-                    // Restore guild channels
-                    loadMaster.loadChannels(guild, backupData, options)
-                    // Restore afk channel and timeout
-                    loadMaster.loadAFK(guild, backupData)
-                    // Restore guild emojis
-                    loadMaster.loadEmojis(guild, backupData)
-                    // Restore guild bans
-                    loadMaster.loadBans(guild, backupData)
-                    // Restore embed channel
-                    loadMaster.loadEmbedChannel(guild, backupData)
+                    
+                    loadMaster.loadConfig(guild, backupData).then(() => {
+                        loadMaster.loadRoles(guild, backupData).then(() => {
+                            loadMaster.loadChannels(guild, backupData, options).then(() => {
+                                loadMaster.loadAFK(guild, backupData).then(() => {
+                                    loadMaster.loadEmojis(guild, backupData).then(() => {
+                                        loadMaster.loadBans(guild, backupData).then(() => {
+                                            loadMaster.loadEmbedChannel(guild, backupData).then(() => {
+                                            })
+                                        })
+                                    })
+                                })
+                            })
+                        })
+                    })
                 
             } catch (e) {
                 return reject(e);
